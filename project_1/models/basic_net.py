@@ -10,7 +10,7 @@ class BasicNet(nn.Module):
         super(BasicNet, self).__init__()
         self.model_name = config.BASIC_NET_NAME
         
-        self.hidden = nn.Linear(config.SAMPLE_SIZE, config.BASIC_NET_HIDDEN_LAYER)
+        self.hidden = nn.Linear(config.DOUBLE_IMAGE_SIZE, config.BASIC_NET_HIDDEN_LAYER)
         
         stdv = 1. / math.sqrt(self.hidden.weight.size(1)) 
         

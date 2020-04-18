@@ -1,9 +1,69 @@
 import torch
 from torchvision import datasets
 import os
+import time
+from pathlib import Path
 
 from config import DATA_DIR
 from config import NB_SAMPLES
+
+######################################################################
+# The data
+
+def convert_to_one_hot_labels(input, target):
+    tmp = input.new_zeros(target.size(0), target.max() + 1)
+    tmp.scatter_(1, target.view(-1, 1), 1.0)
+    return tmp
+
+def load_data(cifar = None, one_hot_labels = False, normalize = False, flatten = True):
+
+    data_dir = './data'
+
+    if (cifar is not None and cifar):
+        print('* Using CIFAR')
+        cifar_train_set = datasets.CIFAR10(data_dir + '/cifar10/', train = True, download = True)
+        cifar_test_set = datasets.CIFAR10(data_dir + '/cifar10/', train = False, download = True)
+
+        train_input = torch.from_numpy(cifar_train_set.data)
+        train_input = train_input.transpose(3, 1).transpose(2, 3).float()
+        train_target = torch.tensor(cifar_train_set.targets, dtype = torch.int64)
+
+        test_input = torch.from_numpy(cifar_test_set.data).float()
+        test_input = test_input.transpose(3, 1).transpose(2, 3).float()
+        test_target = torch.tensor(cifar_test_set.targets, dtype = torch.int64)
+
+    else:
+        print('* Using MNIST')
+        mnist_train_set = datasets.MNIST(data_dir + '/mnist/', train = True, download = True)
+        mnist_test_set = datasets.MNIST(data_dir + '/mnist/', train = False, download = True)
+
+        train_input = mnist_train_set.data.view(-1, 1, 28, 28).float()
+        train_target = mnist_train_set.targets
+        test_input = mnist_test_set.data.view(-1, 1, 28, 28).float()
+        test_target = mnist_test_set.targets
+
+    if flatten:
+        train_input = train_input.clone().reshape(train_input.size(0), -1)
+        test_input = test_input.clone().reshape(test_input.size(0), -1)
+        
+        
+    train_input = train_input.narrow(0, 0, 1000)
+    train_target = train_target.narrow(0, 0, 1000)
+    test_input = test_input.narrow(0, 0, 1000)
+    test_target = test_target.narrow(0, 0, 1000)
+
+    print('** Use {:d} train and {:d} test samples'.format(train_input.size(0), test_input.size(0)))
+
+    if one_hot_labels:
+        train_target = convert_to_one_hot_labels(train_input, train_target)
+        test_target = convert_to_one_hot_labels(test_input, test_target)
+
+    if normalize:
+        mu, std = train_input.mean(), train_input.std()
+        train_input.sub_(mu).div_(std)
+        test_input.sub_(mu).div_(std)
+
+    return train_input, train_target, test_input, test_target
 
 ######################################################################
 
@@ -42,3 +102,18 @@ def compute_accuracy(tensor1, tensor2):
     accuracy = torch.sum(tensor_accuracy).item() / NB_SAMPLES
     
     return accuracy
+
+######################################################################
+
+def save_model(model, epoch=None, loss=None, save_dir=None, specific_name=None):
+
+    if epoch and loss and save_dir and specific_name:
+        model_name = model.model_name
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        file_name = f"{timestr}_{model_name}_epoch_{epoch}_loss_{loss:03.3f}.pt"
+        Path(save_dir).mkdir(exist_ok=True)
+        file_path = Path(save_dir) / file_name
+        torch.save(model.state_dict(), str(file_path))
+    elif save_dir and specific_name:
+        file_path = Path(save_dir) / specific_name
+        torch.save(model.state_dict(), str(file_path))

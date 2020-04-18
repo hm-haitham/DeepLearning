@@ -6,19 +6,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
 
-from config import CRITERION as CRITERION
-from config import EPOCHS as EPOCHS
-from config import (LARGE_PATCH_SIZE, LEARNING_RATE, NUMBER_PATCH_PER_IMAGE,
-                    PATCH_SIZE, SAVE_MODEL_EVERY_X_EPOCH)
-from config import TRAIN_BATCH_SIZE as BATCH_SIZE
-from config import TRAIN_CHECKPOINTS_DIR as CHECKPOINTS_DIR
-from config import TRAIN_DATASET_DIR as DATASET_DIR
-from config import TRAIN_IMAGE_INITIAL_SIZE
-from config import TRAIN_MODEL as MODEL
-from datasets import RoadsDatasetTrain
-from models.resnet import ResNet
-from models.unet import UNet
-
+from config import TRAIN_CHECKPOINTS_DIR
+from config import LEARNING_RATE
 
 def save_model(model, epoch=None, loss=None, save_dir=None, specific_name=None):
     """Saves a checkpoint of the model state
@@ -51,8 +40,9 @@ def train(
     dataloader,
     epochs,
     criterion,
+    save_model_flag=False,
     model_weights=None,
-    checkpoints_dir=CHECKPOINTS_DIR,
+    checkpoints_dir=TRAIN_CHECKPOINTS_DIR,
     last_checkpoint=None,
 ):
     """Trains the model
@@ -81,20 +71,23 @@ def train(
 
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    for epoch in range(epochs):
+    for epoch in range(1, epochs+1):
         model.train()
+        
         for ind_batch, sample_batched in enumerate(dataloader):
-            images = sample_batched["image"]
-            groundtruths = sample_batched["groundtruth"]
+            
+            images = sample_batched["images"]
+            labels = sample_batched["bool_labels"]
+            
             if cuda:
                 images = images.to(device="cuda")
-                groundtruths = groundtruths.to(device="cuda")
+                labels = labels.to(device="cuda")
 
             optimizer.zero_grad()
 
             output = model(images)
 
-            loss = criterion(output, groundtruths)
+            loss = criterion(output.flatten(), labels.float().flatten())
 
             loss.require_grad = True
             loss.backward()
@@ -107,37 +100,9 @@ def train(
                         epoch, ind_batch, len(dataloader), loss
                     )
                 )
-
-        if SAVE_MODEL_EVERY_X_EPOCH and (epoch % SAVE_MODEL_EVERY_X_EPOCH == 0):
-            save_model(
-                model=model, epoch=epoch, loss=loss.item(), save_dir=checkpoints_dir
-            )
-#             Every SAVE_MODEL_EVERY_X_EPOCH, we make a checkpoint of our model
-            print(f"model saved to {str(checkpoints_dir)}")
-    save_model(
-        model=model,
-        epoch=None,
-        loss=None,
-        save_dir=checkpoints_dir,
-        specific_name=last_checkpoint,
-    )
-
-
-
-if __name__ == "__main__":
-    model = MODEL
-    dataset = RoadsDatasetTrain(
-        patch_size=PATCH_SIZE,
-        large_patch_size=LARGE_PATCH_SIZE,
-        image_initial_size=TRAIN_IMAGE_INITIAL_SIZE,
-        number_patch_per_image=NUMBER_PATCH_PER_IMAGE,
-        root_dir=DATASET_DIR,
-    )
-    dataloader = data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
-    train(
-        model=model,
-        dataloader=dataloader,
-        epochs=EPOCHS,
-        criterion=CRITERION,
-        checkpoints_dir=CHECKPOINTS_DIR,
-    )
+                
+            if save_model_flag and (epoch-1 % SAVE_MODEL_EVERY_X_EPOCH == 0):
+                save_model(
+                    model=model, epoch=epoch, loss=loss.item(), save_dir=checkpoints_dir
+                )
+                print(f"model saved to {str(checkpoints_dir)}")

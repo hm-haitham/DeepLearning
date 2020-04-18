@@ -7,6 +7,10 @@ from helpers import save_model
 from config import TRAIN_CHECKPOINTS_DIR
 from config import LEARNING_RATE
 
+ALPHA=0.5
+BETA=0.25
+GAMMA=0.25
+
 def train_double(
     model,
     dataloader,
@@ -30,6 +34,7 @@ def train_double(
             
             images = sample_batched["images"]
             labels = sample_batched["bool_labels"]
+            digit_labels = sample_batched["digit_labels"]
             
             if cuda:
                 images = images.to(device="cuda")
@@ -37,9 +42,13 @@ def train_double(
 
             optimizer.zero_grad()
 
-            output = model(images)
-
+            output, loss_left, loss_right = model(images, digit_labels)
+            
+#             print(loss_left, loss_right)
+            
             loss = criterion(output.flatten(), labels.float().flatten())
+            
+            aux_loss = ALPHA*loss + BETA*loss_left + GAMMA*loss_right
 
             loss.require_grad = True
             loss.backward()

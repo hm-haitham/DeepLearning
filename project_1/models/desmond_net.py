@@ -14,8 +14,10 @@ class DesmondNet(nn.Module):
             raise Exception("Minimum 1 hidden layer")
         
         self.left_net = left_net
+        self.left_criterion = nn.BCELoss()
         
         self.right_net = right_net
+        self.right_crieterion = nn.BCELoss()
         
         self.hiddens = []
         
@@ -36,7 +38,7 @@ class DesmondNet(nn.Module):
         
         self.output = nn.Linear(config.DESMOND_NET_HIDDEN_LAYER, 1)
 
-    def forward(self, x):
+    def forward(self, x, classes):
         #TODO: SPLIT x which is of size [N, 2, 14, 14] to two distinct tensors of size [N, 1, 14, 14]
         dummy = torch.zeros(x.size(0), 1, 14, 14)
         left_image = dummy
@@ -45,6 +47,13 @@ class DesmondNet(nn.Module):
         lefted = self.left_net(dummy)
         
         righted = self.right_net(dummy)
+        
+        #TODO: COMPUTE loss from left and right networks, to be returned for use in the train method, for implementing aux_loss
+        #Use self.left_criterion and self.right_criterion
+        #It can also be saved as a field in the object, to be used in the backward method if we want the loss of left and right
+        #To be used only in the part of the gradient specific to left and right networks
+        loss_left = 1
+        loss_right = 1
         
         #TODO: CONCAT lefted and righted which are of size [N,10] each to a single tensor of size [N,20]
         dummy_inter = torch.zeros(x.size(0), righted.size(1)*2)
@@ -58,4 +67,4 @@ class DesmondNet(nn.Module):
         
         out = self.output(hid)
         
-        return torch.sigmoid(out)
+        return torch.sigmoid(out), loss_left, loss_right

@@ -33,7 +33,7 @@ class OscarNet(nn.Module):
         self.output = nn.Linear(config.OSCAR_NET_HIDDEN_LAYER, config.NUMBER_OF_CLASSES)
 
     def forward(self, x):
-        flattened = x.view(x.size(0),-1)
+        flattened = x.view(1,-1)
         
         hid = self.hiddens[0](flattened)
         

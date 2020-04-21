@@ -5,7 +5,6 @@ class PairDataset(Dataset):
 
     def __init__(self, data, bool_labels, digit_labels = None):
         self.images = data
-        
         self.bool_labels = bool_labels
         
         if digit_labels is not None:
@@ -31,7 +30,6 @@ class SingleDataset(Dataset):
 
     def __init__(self, data, digit_labels):
         self.images = data
-        
         self.digit_labels = digit_labels
 
     def __len__(self):

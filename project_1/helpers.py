@@ -12,6 +12,7 @@ from config import NB_SAMPLES
 
 def convert_to_one_hot_labels(input, target):
     tmp = input.new_zeros(target.size(0), target.max() + 1)
+    #set ones
     tmp.scatter_(1, target.view(-1, 1), 1.0)
     return tmp
 

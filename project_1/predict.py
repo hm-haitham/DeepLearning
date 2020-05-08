@@ -1,56 +1,109 @@
 import torch
+import torch.nn as nn
+import torch.utils.data as data
 
-from config import TEST_BATCH_SIZE
-from config import NB_SAMPLES
-from helpers import compute_accuracy
+from config import EPOCHS
+from config import FINAL_CRITERION
+from config import LEARNING_RATE
+from config import SUB_CRITERION
+from config import WEIGHTS_LOSS
 
-def predict(model, dataloader, model_weights=None):
-    """Make predictions based on the given model, and saves images
-
-        Args:
-            model (nn.Module) : Model to predict with
-            
-            dataloader : The dataloader of the test set
-
-            model_weights : a dict containing the state of the weights with which to initialize our model
-
-        """
-
-    if model_weights is not None:
-        model.load_state_dict(torch.load(str(model_weights)))
-
-    model.eval()
-
-    cuda = torch.cuda.is_available()
-    if cuda:
-        model = model.to(device="cuda")
-        print("CUDA is available")
-    else:
-        print("CUDA is NOT available")
-
-    result = torch.zeros(NB_SAMPLES)
-    true_labels = torch.zeros(NB_SAMPLES)
+def predict_siamese(model, 
+            dataloader,
+            final_criterion = FINAL_CRITERION,
+            aux_loss = False,
+            sub_criterion = SUB_CRITERION, 
+            weights_loss = WEIGHTS_LOSS):
     
+    model.eval()
+    
+    cuda = torch.cuda.is_available()
+        
+    sum_loss = 0
+    total = 0
+    correct = 0
+    accuracy = 0
+
+    sum_loss_l = 0
+
+    sum_loss_r = 0
+
     for ind_batch, sample_batched in enumerate(dataloader):
-        batch_images = sample_batched["images"]
+
+        images = sample_batched["images"]
+        labels = sample_batched["bool_labels"]
+        digit_labels = sample_batched["digit_labels"]
+
+        output, lefted, righted = model(images)
         
-        current_batch_size = batch_images.size(0)
+        labels = labels.unsqueeze(1)
+
+        loss = final_criterion(output.flatten(), labels.float().flatten())
+        loss_left = sub_criterion(lefted, digit_labels[:,0])
+        loss_right = sub_criterion(righted, digit_labels[:,1])
+
+        if aux_loss:
+            alpha, beta, gamma = weights_loss
+            loss = alpha * loss + beta * loss_left + gamma * loss_right
+
+        #update the accuracy 
+        total += images.size(0)  
+        correct += (output.round() == labels).sum() 
+
+        #add the loss for this batch to the total loss of the epoch
+        sum_loss = sum_loss + loss.item()
+        sum_loss_l = sum_loss_l + loss_left.item()
+        sum_loss_r = sum_loss_r + loss_right.item()
+
+    #compute the mean to obtain the loss for this epoch 
+    mean_loss = sum_loss / float(len(dataloader))
+    mean_loss_l = sum_loss_l / float(len(dataloader))
+    mean_loss_r = sum_loss_r / float(len(dataloader))
+    
+    print("The test loss is {0}".format(mean_loss) )
+
+    accuracy = float(correct) / float(total)
+    print("The test accuracy is {0}".format(accuracy) )
         
-        if cuda:
-            batch_images = batch_images.to(device="cuda")
-        with torch.no_grad():
-            output = model(batch_images)
+    return mean_loss, accuracy, mean_loss_l, mean_loss_r
+
+def predict_basic(model, 
+            dataloader,
+            final_criterion = FINAL_CRITERION):
+    
+    model.eval()
+    
+    cuda = torch.cuda.is_available()
         
-        final = output.clone().detach().cpu()
-        final[final > 0.5] = 1
-        final[final <= 0.5] = 0
+    sum_loss = 0
+    total = 0
+    correct = 0
+    accuracy = 0
+
+    for ind_batch, sample_batched in enumerate(dataloader):
+
+        images = sample_batched["images"]
+        labels = sample_batched["bool_labels"]
+
+        output = model(images)
         
-        result[ind_batch*TEST_BATCH_SIZE : ind_batch*TEST_BATCH_SIZE + current_batch_size] = final.flatten()
-        true_labels[ind_batch*TEST_BATCH_SIZE : ind_batch*TEST_BATCH_SIZE + current_batch_size] = sample_batched["bool_labels"].float().flatten()
+        labels = labels.unsqueeze(1)
+
+        loss = final_criterion(output.flatten(), labels.float().flatten())
+
+        #update the accuracy 
+        total += images.size(0)  
+        correct += (output.round() == labels).sum() 
+
+        #add the loss for this batch to the total loss of the epoch
+        sum_loss = sum_loss + loss.item()
+
+    #compute the mean to obtain the loss for this epoch 
+    mean_loss = sum_loss / float(len(dataloader))
+    
+    print("The test loss is {0}".format(mean_loss) )
+
+    accuracy = float(correct) / float(total)
+    print("The test accuracy is {0}".format(accuracy) )
         
-        if ind_batch % 100 == 0:
-            print("[Batch {}/{}]".format(ind_batch, len(dataloader)))
-            
-    accuracy = compute_accuracy(result, true_labels)
-            
-    return result, accuracy
+    return mean_loss, accuracy

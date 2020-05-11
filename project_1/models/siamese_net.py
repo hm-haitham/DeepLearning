@@ -33,23 +33,25 @@ class siamese_net(nn.Module):
                                    nn.Dropout(p=0.2)) for i in range(self.nb_subnet) ] )
         
             #fully connected part   
-            # from a conv (5,5)  => fc layer (25,512) => Relu => fc layer (512,10) => Softmax
+            # from a conv (5,5)  => fc layer (25,300) => Relu => fc layer (300,10) 
             
             out_conv = 25 * 2 * nb_channels                                          
             
             self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
                                                    nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
         if (architecture == 2 ):
+            #(W−F+2P)/S+1
             
-            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size=5, stride=1, padding=2),
-                                                     nn.ReLU(),
-                                                     nn.MaxPool2d(kernel_size=3, stride=3),
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size=5, stride=1, padding=1), #(14 - 5 + 2 ) + 1 =12
+                                                     nn.LeakyReLU(),
+                                                     nn.MaxPool2d(kernel_size=3, stride=3), #4
                                                      nn.Dropout(p=0.2),
-                                                     nn.Conv2d(nb_channels, 2 * nb_channels, kernel_size=5, stride=1, padding=2),
-                                                     nn.ReLU(),
-                                                     nn.MaxPool2d(kernel_size=3, stride=3),
+                                                     nn.Conv2d(nb_channels, 2 * nb_channels, 
+                                                               kernel_size=3, stride=1, padding=1), #(4-3 +2) + 1 = 4
+                                                     nn.LeakyReLU(),
                                                      nn.Dropout(p=0.2)) for i in range(self.nb_subnet) ] )
-            out_conv = 1 * 2 * nb_channels                                          
+            
+            out_conv = 4 * 4 * 2 * nb_channels #flatten the (2,2, 2 * nb_channels) tensor                                         
             
             self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
                                                    nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
@@ -58,16 +60,15 @@ class siamese_net(nn.Module):
             
             #(W−F+2P)/S+1
            
-            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size=3, stride=1, padding=0),  #(14-3-0) = 12 
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size=3, stride=1, padding=0),  #(14-3+0) + 1 = 12 
                                                      nn.LeakyReLU(),
                                                      nn.MaxPool2d(kernel_size=3, stride=3), #4
                                                      nn.Dropout(p=0.2),
-                                                     nn.Conv2d(nb_channels, 2 * nb_channels, kernel_size=2, stride=1, padding=0), #2
+                                                     nn.Conv2d(nb_channels, 2 * nb_channels, kernel_size=2, stride=1, padding=0), #3
                                                      nn.LeakyReLU(),
-                                                     nn.MaxPool2d(kernel_size=2, stride=2), #1
                                                      nn.Dropout(p=0.2)) for i in range(self.nb_subnet) ] )
                                                      
-            out_conv = 1 * 2 * nb_channels                                          
+            out_conv = 3* 3 * 2 * nb_channels                                          
             
             self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
                                                    nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
@@ -82,10 +83,10 @@ class siamese_net(nn.Module):
                                                      nn.Conv2d(nb_channels, 2 * nb_channels, 
                                                                kernel_size=3, stride=1, padding=0), #(5-3)+1 = 3
                                                      nn.LeakyReLU(),
-                                                     nn.MaxPool2d(kernel_size=3, stride=3), #1  
+                                                     #nn.MaxPool2d(kernel_size=3, stride=3), #1  
                                                      nn.Dropout(p=0.2) ) for i in range(self.nb_subnet) ] )
             
-            out_conv = 1 * 2 * nb_channels 
+            out_conv = 3* 3 * 2 * nb_channels 
             
             self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
                                                    nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )

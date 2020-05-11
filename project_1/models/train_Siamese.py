@@ -12,7 +12,7 @@ def one_hot_encoding(input_, nb_classes):
     tmp.scatter_(1, input_, 1)     #fill with one in the correct index
     return tmp
 
-def train_siamese(model,dataloader, epochs, learning_rate, aux_loss = False, weight_loss_1 = 0.4, weight_loss_2 = 0.4):
+def train_siamese(model, dataloader, test_data, epochs, learning_rate, aux_loss = False, weight_loss_1 = 0.4, weight_loss_2 = 0.4):
     
     model.train() #set the model on training mode 
     
@@ -39,6 +39,8 @@ def train_siamese(model,dataloader, epochs, learning_rate, aux_loss = False, wei
            
     training_losses = []
     training_acc = []
+    test_losses = []
+    test_acc = []
     
     for epoch in range(1, epochs+1):
     
@@ -113,9 +115,14 @@ def train_siamese(model,dataloader, epochs, learning_rate, aux_loss = False, wei
         print("At epoch {0} the accuracy is {1}".format(epoch, accuracy_epoch) )
         training_acc.append(accuracy_epoch)
         
-    return training_losses, training_acc
+        test_loss, test_accuracy = test_siamese(model, test_data, aux_loss, weight_loss_1, weight_loss_2)
 
-def test_siamese(model, dataloader,aux_loss = False, weight_loss_1 = 0.4, weight_loss_2 = 0.4):
+        test_losses.append(test_loss)
+        test_acc.append(test_accuracy)
+        
+    return training_losses, training_acc, test_losses, test_acc
+
+def test_siamese(model, dataloader, aux_loss = False, weight_loss_1 = 0.4, weight_loss_2 = 0.4):
     
     model.eval() # set the model on evaluation mode
 
@@ -125,6 +132,9 @@ def test_siamese(model, dataloader,aux_loss = False, weight_loss_1 = 0.4, weight
     total = 0
     correct = 0
     
+    if(aux_loss):
+        criterion_aux = nn.CrossEntropyLoss()
+        
     for ind_batch, sample_batched in enumerate(dataloader):
         
         images = sample_batched["images"]                                  #(batch_size,2,14,14)
@@ -143,9 +153,12 @@ def test_siamese(model, dataloader,aux_loss = False, weight_loss_1 = 0.4, weight
         output1, output2, output = model.forward(input1,input2)
         
         if(aux_loss):
-            loss_input1 = -torch.log(output1 + 1e-20) * one_hot_encoded_label1.float()   #(batch_size,1)
-            loss_input2 = -torch.log(output2 + 1e-20) * one_hot_encoded_label2.float()   #(batch_size,1)
-            sum_test_loss += weight_loss_1 * loss_input1.mean() + weight_loss_2 * loss_input2.mean()  #auxilary loss
+            #loss_input1 = -torch.log(output1 + 1e-20) * one_hot_encoded_label1.float()   #(batch_size,1)
+            #loss_input2 = -torch.log(output2 + 1e-20) * one_hot_encoded_label2.float()   #(batch_size,1)
+            #sum_test_loss += weight_loss_1 * loss_input1.mean() + weight_loss_2 * loss_input2.mean()  #auxilary loss
+            loss1 =  criterion_aux(output1,digit_labels[:,0])
+            loss2 = criterion_aux(output2,digit_labels[:,1])
+            sum_test_loss = weight_loss_1 * loss1 + weight_loss_2 * loss2 
   
         sum_test_loss += criterion(output, compare_labels) 
          

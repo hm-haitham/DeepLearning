@@ -6,7 +6,7 @@ import config
 
 class siamese_net(nn.Module):
 
-    def __init__(self, weight_sharing = True, architecture = 1 ):
+    def __init__(self, weight_sharing = True, architecture = 1, nb_channels = 24, nb_hidden = 300):
         
         super(siamese_net, self).__init__()
         
@@ -24,35 +24,76 @@ class siamese_net(nn.Module):
             # Relu
             # (1,10,10) maxpool (2,2) => (5,5)
             # try to add different channels and add dropout ? 
-            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, 1 , kernel_size=3),  
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels , kernel_size=3),  
                                    nn.LeakyReLU(),
-                                   nn.Conv2d(1, 1 , kernel_size=3),
-                                   nn.LeakyReLU(),
-                                   nn.MaxPool2d(2) ) for i in range(self.nb_subnet) ] )
+                                   nn.Dropout(p=0.2),                  
+                                   nn.Conv2d(nb_channels, 2 * nb_channels, kernel_size=3),
+                                   nn.LeakyReLU(),           
+                                   nn.MaxPool2d(2),
+                                   nn.Dropout(p=0.2)) for i in range(self.nb_subnet) ] )
         
             #fully connected part   
             # from a conv (5,5)  => fc layer (25,512) => Relu => fc layer (512,10) => Softmax
             
-            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(25, 512),
-                                     nn.LeakyReLU(),
-                                     nn.Linear(512, 10)) for i in range(self.nb_subnet) ] )
+            out_conv = 25 * 2 * nb_channels                                          
+            
+            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
+                                                   nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
         if (architecture == 2 ):
             
-            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, 24, kernel_size=5, stride=1, padding=2),
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size=5, stride=1, padding=2),
                                                      nn.ReLU(),
                                                      nn.MaxPool2d(kernel_size=3, stride=3),
-                                                     nn.Conv2d(24, 48, kernel_size=5, stride=1, padding=2),
+                                                     nn.Dropout(p=0.2),
+                                                     nn.Conv2d(nb_channels, 2 * nb_channels, kernel_size=5, stride=1, padding=2),
                                                      nn.ReLU(),
-                                                     nn.MaxPool2d(kernel_size=3, stride=3) ) for i in range(self.nb_subnet) ] )
-                                                     
-            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(48, 100),
-                                                   nn.Linear(100, 10) ) for i in range(self.nb_subnet) ] )
+                                                     nn.MaxPool2d(kernel_size=3, stride=3),
+                                                     nn.Dropout(p=0.2)) for i in range(self.nb_subnet) ] )
+            out_conv = 1 * 2 * nb_channels                                          
+            
+            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
+                                                   nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
 
+        if (architecture == 3 ):
+            
+            #(W−F+2P)/S+1
+           
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size=3, stride=1, padding=0),  #(14-3-0) = 12 
+                                                     nn.LeakyReLU(),
+                                                     nn.MaxPool2d(kernel_size=3, stride=3), #4
+                                                     nn.Dropout(p=0.2),
+                                                     nn.Conv2d(nb_channels, 2 * nb_channels, kernel_size=2, stride=1, padding=0), #2
+                                                     nn.LeakyReLU(),
+                                                     nn.MaxPool2d(kernel_size=2, stride=2), #1
+                                                     nn.Dropout(p=0.2)) for i in range(self.nb_subnet) ] )
+                                                     
+            out_conv = 1 * 2 * nb_channels                                          
+            
+            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
+                                                   nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
+        
+        if (architecture == 4 ):
+            
+            #(W−F+2P)/S+1
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size=2, stride=1, padding=1),  #(14-2+2)+1 = 15
+                                                     nn.LeakyReLU(),
+                                                     nn.MaxPool2d(kernel_size=3, stride=3), #5
+                                                     nn.Dropout(p=0.2),
+                                                     nn.Conv2d(nb_channels, 2 * nb_channels, 
+                                                               kernel_size=3, stride=1, padding=0), #(5-3)+1 = 3
+                                                     nn.LeakyReLU(),
+                                                     nn.MaxPool2d(kernel_size=3, stride=3), #1  
+                                                     nn.Dropout(p=0.2) ) for i in range(self.nb_subnet) ] )
+            
+            out_conv = 1 * 2 * nb_channels 
+            
+            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
+                                                   nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
             
         #combine the subnetwork output
         #(20,1) and sigmoid
-        self.comb = nn.Sequential(nn.Linear(20, 300), nn.LeakyReLU(),
-                                  nn.Linear(300, 300), nn.LeakyReLU(),
+        self.comb = nn.Sequential(nn.Linear(20, 300), nn.LeakyReLU(), nn.Dropout(p=0.2),
+                                  nn.Linear(300, 300), nn.LeakyReLU(), nn.Dropout(p=0.2),
                                   nn.Linear(300, 1), nn.Sigmoid() ) 
      
             

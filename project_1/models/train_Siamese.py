@@ -4,6 +4,7 @@ from torch.nn import functional as F
 import math
 import config
 import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
 
 
 def one_hot_encoding(input_, nb_classes): 
@@ -17,7 +18,13 @@ def train_siamese(model,dataloader, epochs, learning_rate, aux_loss = False, wei
     
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr = learning_rate)
-      
+    
+    # gamma is the decaying factor, after every 1 epoch new_lr = lr*gamma 
+    scheduler = StepLR(optimizer, step_size=1, gamma = 0.9)
+    
+    if(aux_loss):
+        criterion_aux = nn.CrossEntropyLoss()
+        
     print("Start training with {0} epochs, a learning rate of {1} and {2} as loss function".format(epochs,learning_rate, criterion))
         
     if(aux_loss):
@@ -34,7 +41,7 @@ def train_siamese(model,dataloader, epochs, learning_rate, aux_loss = False, wei
     training_acc = []
     
     for epoch in range(1, epochs+1):
-        
+    
         sum_loss_epoch = 0
         total = 0
         correct = 0
@@ -67,12 +74,17 @@ def train_siamese(model,dataloader, epochs, learning_rate, aux_loss = False, wei
                 #add small value to avoid the log(0) problem
                 #multiplication element wise to keep only the probability of the correct label
             
-                loss_input1 = -torch.log(output1 + 1e-20) * one_hot_encoded_label1.float()   #(batch_size,1)
-                loss_input2 = -torch.log(output2 + 1e-20) * one_hot_encoded_label2.float()   #(batch_size,1)
+                #loss_input1 = -torch.log(output1 + 1e-20) * one_hot_encoded_label1.float()   #(batch_size,1)
+                #loss_input2 = -torch.log(output2 + 1e-20) * one_hot_encoded_label2.float()   #(batch_size,1)
+                #loss = weight_loss_1 * loss_input1.mean() + weight_loss_2 * loss_input2.mean()  #auxilary loss
+                
+                loss1 =  criterion_aux(output1,digit_labels[:,0])
+                loss2 = criterion_aux(output2,digit_labels[:,1])
+                loss = weight_loss_1 * loss1 + weight_loss_2 * loss2 
+
+            loss3 = criterion(output, compare_labels)   #if batched do the mean of the errors 
             
-                loss = weight_loss_1 * loss_input1.mean() + weight_loss_2 * loss_input2.mean()  #auxilary loss
-           
-            loss += criterion(output, compare_labels)   #if batched do the mean of the errors 
+            loss += loss3
 
             loss.require_grad = True   #should remove I think
             loss.backward()
@@ -88,7 +100,9 @@ def train_siamese(model,dataloader, epochs, learning_rate, aux_loss = False, wei
                 
             #add the loss for this batch to the total loss of the epoch
             sum_loss_epoch = sum_loss_epoch + loss 
-            
+        
+        scheduler.step()
+        
         #compute the mean to obtain the loss for this epoch 
         mean_loss = sum_loss_epoch / float(len(dataloader))
         

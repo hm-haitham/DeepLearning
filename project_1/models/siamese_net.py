@@ -15,7 +15,7 @@ class siamese_net(nn.Module):
             self.nb_subnet = 1
         else:
             self.nb_subnet = 2
-            
+        
         if (architecture == 1 ):
             # subnetwork 1
             # (1,14,14) conv (1,3,3) =>  (1,12,12)
@@ -35,12 +35,27 @@ class siamese_net(nn.Module):
             
             self.fc = nn.ModuleList([nn.Sequential(nn.Linear(25, 512),
                                      nn.LeakyReLU(),
-                                     nn.Linear(512, 10),
-                                     nn.Softmax() ) for i in range(self.nb_subnet) ] )
+                                     nn.Linear(512, 10)) for i in range(self.nb_subnet) ] )
+        if (architecture == 2 ):
+            
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, 24, kernel_size=5, stride=1, padding=2),
+                                                     nn.ReLU(),
+                                                     nn.MaxPool2d(kernel_size=3, stride=3),
+                                                     nn.Conv2d(24, 48, kernel_size=5, stride=1, padding=2),
+                                                     nn.ReLU(),
+                                                     nn.MaxPool2d(kernel_size=3, stride=3) ) for i in range(self.nb_subnet) ] )
+                                                     
+            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(48, 100),
+                                                   nn.Linear(100, 10) ) for i in range(self.nb_subnet) ] )
+
+            
         #combine the subnetwork output
         #(20,1) and sigmoid
-        self.comb = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
-        
+        self.comb = nn.Sequential(nn.Linear(20, 300), nn.LeakyReLU(),
+                                  nn.Linear(300, 300), nn.LeakyReLU(),
+                                  nn.Linear(300, 1), nn.Sigmoid() ) 
+     
+            
     def forward_once(self, x, subnet_nbr):
         
         x = self.conv[subnet_nbr](x)  #(batch_size,1,5,5)

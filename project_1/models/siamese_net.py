@@ -6,7 +6,7 @@ import config
 
 class siamese_net(nn.Module):
 
-    def __init__(self, weight_sharing = True, architecture = 1, nb_channels = 24, nb_hidden = 300):
+    def __init__(self, weight_sharing = True, architecture = 1, nb_channels = 24, nb_hidden = 300, k = 1):
         
         super(siamese_net, self).__init__()
         
@@ -90,7 +90,25 @@ class siamese_net(nn.Module):
             
             self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
                                                    nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
+        if (architecture == 5 ):
             
+            #(W−F+2P)/S+1
+            #k= 1, 3, 5  
+            self.conv = nn.ModuleList([nn.Sequential(nn.Conv2d(1, nb_channels, kernel_size= k ),  #(14-k)+1 = 15 -k # 14, 12,10
+                                                     nn.LeakyReLU(),
+                                                     nn.MaxPool2d(kernel_size=2, stride=2), #(15-k) / 2 : 7, 6, 5  
+                                                     nn.Dropout(p=0.2),
+                                                     nn.Conv2d(nb_channels, 2 * nb_channels, 
+                                                               kernel_size = k),    #7, 5, 3   # (15 - k) /2 - k + 1
+                                                     nn.LeakyReLU(),
+                                                     #nn.MaxPool2d(kernel_size=3, stride=3), #1  
+                                                     nn.Dropout(p=0.2) ) for i in range(self.nb_subnet) ] )
+           
+            out_conv = int( ( ((15 - k) /2 - k + 1)** 2 ) * 2 * nb_channels)
+      
+            self.fc = nn.ModuleList([nn.Sequential(nn.Linear(out_conv , nb_hidden), nn.LeakyReLU(), nn.Dropout(p=0.2),
+                                                   nn.Linear(nb_hidden, 10) ) for i in range(self.nb_subnet) ] )
+                
         #combine the subnetwork output
         #(20,1) and sigmoid
         self.comb = nn.Sequential(nn.Linear(20, 300), nn.LeakyReLU(), nn.Dropout(p=0.2),

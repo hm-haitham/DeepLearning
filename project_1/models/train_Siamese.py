@@ -12,8 +12,16 @@ def one_hot_encoding(input_, nb_classes):
     tmp.scatter_(1, input_, 1)     #fill with one in the correct index
     return tmp
 
-def train_siamese(model, dataloader, test_data, epochs, learning_rate, aux_loss = False, weight_loss_1 = 0.4, weight_loss_2 = 0.4):
+def train_siamese(model, dataloader, test_data, epochs, learning_rate, aux_loss = False, alpha = 0.5 ):
     
+    cuda = torch.cuda.is_available()
+    if cuda:
+        model = model.to(device="cuda")
+        print("CUDA available")
+    else:
+        print("NO CUDA")
+        
+        
     model.train() #set the model on training mode 
     
     criterion = nn.BCELoss()
@@ -55,7 +63,11 @@ def train_siamese(model, dataloader, test_data, epochs, learning_rate, aux_loss 
             compare_labels = sample_batched["bool_labels"].float().view(-1,1)  #(batch_size,1)
             digit_labels = sample_batched["digit_labels"]                      #(batch_size,2)
             
-            
+            if cuda:
+                images = images.to(device="cuda")
+                compare_labels = compare_labels.to(device="cuda")
+                digit_labels = digit_labels.to(device = "cuda")
+                
             #gets (batch_size,1) and returns (batch_size,10)
             one_hot_encoded_label1 = one_hot_encoding(digit_labels[:,0].view(-1,1), nb_classes=10)
             one_hot_encoded_label2 = one_hot_encoding(digit_labels[:,1].view(-1,1), nb_classes=10)
@@ -82,11 +94,11 @@ def train_siamese(model, dataloader, test_data, epochs, learning_rate, aux_loss 
                 
                 loss1 =  criterion_aux(output1,digit_labels[:,0])
                 loss2 = criterion_aux(output2,digit_labels[:,1])
-                loss = weight_loss_1 * loss1 + weight_loss_2 * loss2 
+                loss = (1 - alpha)/2 * loss1 + (1 - alpha)/2 * loss2 
 
             loss3 = criterion(output, compare_labels)   #if batched do the mean of the errors 
             
-            loss += loss3
+            loss += alpha * loss3
 
             loss.require_grad = True   #should remove I think
             loss.backward()
@@ -101,7 +113,7 @@ def train_siamese(model, dataloader, test_data, epochs, learning_rate, aux_loss 
                 print("[Epoch {}, Batch {}/{}]:  [Loss: {:.2f}]".format(epoch, ind_batch, len(dataloader), loss) )
                 
             #add the loss for this batch to the total loss of the epoch
-            sum_loss_epoch = sum_loss_epoch + loss 
+            sum_loss_epoch = sum_loss_epoch + loss.item()
         
         scheduler.step()
         
@@ -115,17 +127,24 @@ def train_siamese(model, dataloader, test_data, epochs, learning_rate, aux_loss 
         print("At epoch {0} the accuracy is {1}".format(epoch, accuracy_epoch) )
         training_acc.append(accuracy_epoch)
         
-        test_loss, test_accuracy = test_siamese(model, test_data, aux_loss, weight_loss_1, weight_loss_2)
+        test_loss, test_accuracy = test_siamese(model, test_data, aux_loss, alpha)
 
         test_losses.append(test_loss)
         test_acc.append(test_accuracy)
         
     return training_losses, training_acc, test_losses, test_acc
 
-def test_siamese(model, dataloader, aux_loss = False, weight_loss_1 = 0.4, weight_loss_2 = 0.4):
+def test_siamese(model, dataloader, aux_loss = False, alpha = 0.5):
     
+    cuda = torch.cuda.is_available()
+    if cuda:
+        model = model.to(device="cuda")
+        print("CUDA available")
+    else:
+        print("NO CUDA")
+        
     model.eval() # set the model on evaluation mode
-
+    
     criterion = nn.BCELoss()
     
     sum_test_loss = 0
@@ -140,7 +159,12 @@ def test_siamese(model, dataloader, aux_loss = False, weight_loss_1 = 0.4, weigh
         images = sample_batched["images"]                                  #(batch_size,2,14,14)
         compare_labels = sample_batched["bool_labels"].float().view(-1,1)  #(batch_size,1)
         digit_labels = sample_batched["digit_labels"]                      #(batch_size,2)    
-            
+        
+        if cuda:
+                images = images.to(device="cuda")
+                compare_labels = compare_labels.to(device="cuda")
+                digit_labels = digit_labels.to(device = "cuda")
+                
         #gets (batch_size,1) and returns (batch_size,10)
         one_hot_encoded_label1 = one_hot_encoding(digit_labels[:,0].view(-1,1), nb_classes=10)
         one_hot_encoded_label2 = one_hot_encoding(digit_labels[:,1].view(-1,1), nb_classes=10)        
@@ -158,7 +182,7 @@ def test_siamese(model, dataloader, aux_loss = False, weight_loss_1 = 0.4, weigh
             #sum_test_loss += weight_loss_1 * loss_input1.mean() + weight_loss_2 * loss_input2.mean()  #auxilary loss
             loss1 =  criterion_aux(output1,digit_labels[:,0])
             loss2 = criterion_aux(output2,digit_labels[:,1])
-            sum_test_loss = weight_loss_1 * loss1 + weight_loss_2 * loss2 
+            sum_test_loss = (1 - alpha)/2 * loss1 + (1 - alpha)/2 * loss2  
   
         sum_test_loss += criterion(output, compare_labels) 
          

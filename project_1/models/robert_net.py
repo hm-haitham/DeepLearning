@@ -6,7 +6,7 @@ import config
 
 class RobertNet(nn.Module):
 
-    def __init__(self, nb_hidden_layers, base_channel_size = config.ROBERT_NET_BASE_CHANNEL_SIZE, hidden_layer = config.ROBERT_NET_HIDDEN_LAYER):
+    def __init__(self, nb_hidden_layers = config.ROBERT_NET_NB_HIDDEN, hidden_layer = config.ROBERT_NET_HIDDEN_LAYER, base_channel_size = config.ROBERT_NET_BASE_CHANNEL_SIZE):
         
         super(RobertNet, self).__init__()
         self.model_name = config.ROBERT_NET_NAME
@@ -26,14 +26,6 @@ class RobertNet(nn.Module):
                                       nn.LeakyReLU(),
                                       nn.MaxPool2d(2))
         
-        
-        #We can make the network more general by not hardcoding the "4" and computing instead
-        #Basically if we want specify the padding in convLayers, the number of the convlayers or the kernel sizes (3 parameters)
-        #We compute what is the height or width at the end of the conv_net
-        #Because in this kind of network we Pool one time (more would make us lose a lot of information as 14x14 is small
-        #The "2" can stay hardcoded, however careful to check that the computed height/width at the end of the convnet
-        #after tweaking the kernel size / padding and other can still be divisble by 2. Otherwise there will be a runtime error
-        #when training it.
         width_height_conv = ( config.WIDTH_HEIGHT - 4 ) / 2
         
         fcn_input_size = int(width_height_conv * width_height_conv * conv_channel_size)
@@ -41,9 +33,9 @@ class RobertNet(nn.Module):
         self.fc_net = nn.ModuleList()
         
         if nb_hidden_layers > 0:
-            self.fc_net = nn.ModuleList([nn.Linear(hidden_layer, hidden_layer) for i in range(nb_hidden_layers-1)])
+            self.fc_net = nn.ModuleList([nn.Sequential(nn.Linear(hidden_layer, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)) for i in range(nb_hidden_layers-1)])
 
-            self.fc_net.insert(0,nn.Linear(fcn_input_size, hidden_layer))
+            self.fc_net.insert(0,nn.Sequential(nn.Linear(fcn_input_size, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)))
 
             self.output = nn.Linear(hidden_layer, config.NUMBER_OF_CLASSES)
             
@@ -57,9 +49,8 @@ class RobertNet(nn.Module):
         
         hid = flattened
         
-        for layer in self.fc_net:
-            hid = layer(hid)
-            hid = F.relu(hid)
+        for block in self.fc_net:
+            hid = block(hid)
         
         out = self.output(hid)
         

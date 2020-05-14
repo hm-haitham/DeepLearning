@@ -6,14 +6,14 @@ from config import EPOCHS
 from config import FINAL_CRITERION
 from config import LEARNING_RATE
 from config import SUB_CRITERION
-from config import WEIGHTS_LOSS
+from config import ALPHA
 
 def predict_siamese(model, 
             dataloader,
             final_criterion = FINAL_CRITERION,
             aux_loss = False,
             sub_criterion = SUB_CRITERION, 
-            weights_loss = WEIGHTS_LOSS):
+            alpha = ALPHA):
     
     model.eval()
     
@@ -33,6 +33,11 @@ def predict_siamese(model,
         images = sample_batched["images"]
         labels = sample_batched["bool_labels"]
         digit_labels = sample_batched["digit_labels"]
+        
+        if cuda:
+            images = images.to(device="cuda")
+            labels = labels.to(device="cuda")
+            digit_labels = digit_labels.to(device="cuda")
 
         output, lefted, righted = model(images)
         
@@ -43,8 +48,7 @@ def predict_siamese(model,
         loss_right = sub_criterion(righted, digit_labels[:,1])
 
         if aux_loss:
-            alpha, beta, gamma = weights_loss
-            loss = alpha * loss + beta * loss_left + gamma * loss_right
+            loss = alpha * loss + ((1-alpha)/2) * loss_left + ((1-alpha)/2) * loss_right
 
         #update the accuracy 
         total += images.size(0)  
@@ -84,6 +88,10 @@ def predict_basic(model,
 
         images = sample_batched["images"]
         labels = sample_batched["bool_labels"]
+        
+        if cuda:
+            images = images.to(device="cuda")
+            labels = labels.to(device="cuda")
 
         output = model(images)
         

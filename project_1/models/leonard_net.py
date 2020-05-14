@@ -6,7 +6,7 @@ import config
 
 class LeonardNet(nn.Module):
 
-    def __init__(self, nb_hidden_layers, image_net, hidden_layer=config.LEONARD_NET_HIDDEN_LAYER):
+    def __init__(self, nb_hidden_layers = config.LEONARD_NET_NB_HIDDEN, image_net, hidden_layer=config.LEONARD_NET_HIDDEN_LAYER):
         super(LeonardNet, self).__init__()
         self.model_name = config.LEONARD_NET_NAME
         
@@ -18,9 +18,9 @@ class LeonardNet(nn.Module):
         self.hiddens = nn.ModuleList()
         
         if nb_hidden_layers > 0:
-            self.hiddens = nn.ModuleList([nn.Linear(hidden_layer, hidden_layer) for i in range(nb_hidden_layers-1)])
+            self.hiddens = nn.ModuleList([nn.Sequential(nn.Linear(hidden_layer, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)) for i in range(nb_hidden_layers-1)])
 
-            self.hiddens.insert(0,nn.Linear(config.NUMBER_OF_CLASSES*2, hidden_layer))
+            self.hiddens.insert(0,nn.Sequential(nn.Linear(config.NUMBER_OF_CLASSES*2, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)))
 
             self.output = nn.Linear(hidden_layer, 1)
             
@@ -37,11 +37,13 @@ class LeonardNet(nn.Module):
         righted, righted_no = self.image_net(input2)
         
         #CONCAT lefted and righted which are of size [N,10] each to a single tensor of size [N,20]
-        hid = torch.cat((lefted, righted),1)
+        if(soft):
+            hid = torch.cat((lefted, righted),1)
+        else:
+            hid = torch.cat((lefted_no, righted_no),1)
         
-        for layer in self.hiddens:
-            hid = layer(hid)
-            hid = F.relu(hid)
+        for block in self.hiddens:
+            hid = block(hid)
         
         out = self.output(hid)
         

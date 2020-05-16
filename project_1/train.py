@@ -107,6 +107,7 @@ def train_siamese(model, dataloader, test_dataloader, epochs = config.EPOCHS,
         test_losses_l.append(test_loss_l)
         test_losses_r.append(test_loss_r)
         
+        
     return training_losses, training_acc, training_losses_l, training_losses_r, test_losses, test_acc, test_losses_l, test_losses_r
 
 def train_basic(model, dataloader, test_dataloader, epochs = config.EPOCHS,  learning_rate=config.LEARNING_RATE):

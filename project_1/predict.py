@@ -1,23 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.utils.data as data
+import config
 
-from config import EPOCHS
-from config import FINAL_CRITERION
-from config import LEARNING_RATE
-from config import SUB_CRITERION
-from config import ALPHA
-
-def predict_siamese(model, 
-            dataloader,
-            final_criterion = FINAL_CRITERION,
-            aux_loss = False,
-            sub_criterion = SUB_CRITERION, 
-            alpha = ALPHA):
+def predict_siamese(model, dataloader, aux_loss = False, alpha = config.ALPHA):
     
     model.eval()
     
     cuda = torch.cuda.is_available()
+    if cuda:
+        model = model.to(device="cuda")
         
     sum_loss = 0
     total = 0
@@ -25,13 +17,15 @@ def predict_siamese(model,
     accuracy = 0
 
     sum_loss_l = 0
-
     sum_loss_r = 0
 
+    final_criterion = nn.BCELoss()
+    sub_criterion = nn.CrossEntropyLoss()
+    
     for ind_batch, sample_batched in enumerate(dataloader):
 
         images = sample_batched["images"]
-        labels = sample_batched["bool_labels"]
+        labels = sample_batched["bool_labels"].float().view(-1,1)
         digit_labels = sample_batched["digit_labels"]
         
         if cuda:
@@ -41,9 +35,7 @@ def predict_siamese(model,
 
         output, lefted, righted = model(images)
         
-        labels = labels.unsqueeze(1)
-
-        loss = final_criterion(output.flatten(), labels.float().flatten())
+        loss = final_criterion(output, labels)
         loss_left = sub_criterion(lefted, digit_labels[:,0])
         loss_right = sub_criterion(righted, digit_labels[:,1])
 
@@ -71,23 +63,25 @@ def predict_siamese(model,
         
     return mean_loss, accuracy, mean_loss_l, mean_loss_r
 
-def predict_basic(model, 
-            dataloader,
-            final_criterion = FINAL_CRITERION):
+def predict_basic(model, dataloader):
     
     model.eval()
     
     cuda = torch.cuda.is_available()
+    if cuda:
+        model = model.to(device="cuda")
         
     sum_loss = 0
     total = 0
     correct = 0
     accuracy = 0
-
+    
+    final_criterion = nn.BCELoss()
+    
     for ind_batch, sample_batched in enumerate(dataloader):
 
         images = sample_batched["images"]
-        labels = sample_batched["bool_labels"]
+        labels = sample_batched["bool_labels"].float().view(-1,1)
         
         if cuda:
             images = images.to(device="cuda")
@@ -95,9 +89,7 @@ def predict_basic(model,
 
         output = model(images)
         
-        labels = labels.unsqueeze(1)
-
-        loss = final_criterion(output.flatten(), labels.float().flatten())
+        loss = final_criterion(output, labels)
 
         #update the accuracy 
         total += images.size(0)  

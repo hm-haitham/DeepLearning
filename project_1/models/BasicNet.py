@@ -6,12 +6,11 @@ import config
 
 class BasicNet(nn.Module):
 
-    def __init__(self, nb_hidden_layers, hidden_layer = config.BASIC_NET_HIDDEN_LAYER):
+    def __init__(self, nb_hidden_layers = config.BASIC_NET_NB_HIDDEN, hidden_layer = config.BASIC_NET_HIDDEN_LAYER):
         super(BasicNet, self).__init__()
-        self.model_name = config.BASIC_NET_NAME
         
         if nb_hidden_layers < 1:
-            raise Exception("Minimum 1 hidden layers for " + self.model_name)
+            raise Exception("Minimum 1 hidden layers for basic net" )
         
         #nb_hidden_layers-1 times Linear layers (hidden_layer,hidden_layer)
         self.hiddens = nn.ModuleList([nn.Sequential(nn.Linear(hidden_layer, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)) for i in range(nb_hidden_layers-1)])

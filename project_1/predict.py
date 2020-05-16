@@ -56,10 +56,10 @@ def predict_siamese(model, dataloader, aux_loss = False, alpha = config.ALPHA):
     mean_loss_l = sum_loss_l / float(len(dataloader))
     mean_loss_r = sum_loss_r / float(len(dataloader))
     
-    print("The test loss is {0}".format(mean_loss) )
+#     print("The test loss is {0}".format(mean_loss) )
 
     accuracy = float(correct) / float(total)
-    print("The test accuracy is {0}".format(accuracy) )
+#     print("The test accuracy is {0}".format(accuracy) )
         
     return mean_loss, accuracy, mean_loss_l, mean_loss_r
 
@@ -101,9 +101,9 @@ def predict_basic(model, dataloader):
     #compute the mean to obtain the loss for this epoch 
     mean_loss = sum_loss / float(len(dataloader))
     
-    print("The test loss is {0}".format(mean_loss) )
+#     print("The test loss is {0}".format(mean_loss) )
 
     accuracy = float(correct) / float(total)
-    print("The test accuracy is {0}".format(accuracy) )
+#     print("The test accuracy is {0}".format(accuracy) )
         
     return mean_loss, accuracy

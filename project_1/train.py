@@ -88,17 +88,17 @@ def train_siamese(model, dataloader, test_dataloader, epochs = config.EPOCHS,
         mean_loss_l = sum_loss_epoch_l / float(len(dataloader))
         mean_loss_r = sum_loss_epoch_r / float(len(dataloader))
         
-        print("At epoch {0} the training loss is {1}".format(epoch, mean_loss) )
+#         print("At epoch {0} the training loss is {1}".format(epoch, mean_loss) )
         training_losses.append(mean_loss)
         
         accuracy_epoch = float(correct) / float(total)
-        print("At epoch {0} the training accuracy is {1}".format(epoch, accuracy_epoch) )
+#         print("At epoch {0} the training accuracy is {1}".format(epoch, accuracy_epoch) )
         training_acc.append(accuracy_epoch)
         
         training_losses_l.append(mean_loss_l)
         training_losses_r.append(mean_loss_r)
         
-        print('epoch {0}/{1}'.format(epoch, epochs))
+#         print('epoch {0}/{1}'.format(epoch, epochs))
         
         test_loss, test_accuracy, test_loss_l, test_loss_r = predict_siamese(model, test_dataloader, aux_loss, alpha)
         
@@ -106,7 +106,6 @@ def train_siamese(model, dataloader, test_dataloader, epochs = config.EPOCHS,
         test_acc.append(test_accuracy)
         test_losses_l.append(test_loss_l)
         test_losses_r.append(test_loss_r)
-        
         
     return training_losses, training_acc, training_losses_l, training_losses_r, test_losses, test_acc, test_losses_l, test_losses_r
 
@@ -168,14 +167,14 @@ def train_basic(model, dataloader, test_dataloader, epochs = config.EPOCHS,  lea
         #compute the mean to obtain the loss for this epoch 
         mean_loss = sum_loss_epoch / float(len(dataloader))
         
-        print("At epoch {0} the loss is {1}".format(epoch, mean_loss) )
+#         print("At epoch {0} the loss is {1}".format(epoch, mean_loss) )
         training_losses.append(mean_loss)
         
         accuracy_epoch = float(correct) / float(total)
-        print("At epoch {0} the accuracy is {1}".format(epoch, accuracy_epoch) )
+#         print("At epoch {0} the accuracy is {1}".format(epoch, accuracy_epoch) )
         training_acc.append(accuracy_epoch)
         
-        print('epoch {0}/{1}'.format(epoch, epochs))
+#         print('epoch {0}/{1}'.format(epoch, epochs))
         
         test_loss, test_accuracy = predict_basic(model, test_dataloader)
 

@@ -27,12 +27,22 @@ class Linear(Module):
         self.dl_db = torch.empty(self.b.size())
     
     def forward(self, x):
-        
+        """ Computes  a forward pass 
+        Input : 
+            x : (dim_in,N), with N the number of samples (the batch size)
+        Output:
+            y : y=Wx+b with W:(dim_out, dim_in), b:(dim_out, N) giving y:(dim_out, N)
+        """
         self.x = x
         return self.w.mm(self.x) + self.b
 
     def backward(self, dl_ds):
-       
+       """ Computes  a backward pass and update gradient of the layer's parameters
+        Input : 
+            dl_ds : gradient with repect to the activation
+        Output:
+            dl_dx : gradient with repect to the input
+        """
         ds_dx = self.w.t()
         dl_dx = ds_dx.mm(dl_ds)
         

@@ -8,41 +8,51 @@ from models.CNN import CNN
 from models.SiameseNet import SiameseNet
 
 from train import train_siamese
+import torch.utils.data as data
 
 def compute_results(subnet_type, weight_sharing, aux_loss):
     print("=" * 100)
-    print('\nWeight sharing:', weight_sharing, '   Aux loss:', aux_loss)
+    print('\nWeight sharing:', weight_sharing, '   Aux loss:', aux_loss,'       Subnet:', subnet_type)
     
     if subnet_type == 'FCN' :
         alpha = config.BEST_ALPHA_FCN
-        nb_hidden_layers = config.SIAMESE_BEST_NB_CNN
-        hidden_layer = config.SIAMESE_BEST_HIDDEN_CNN
+        nb_hidden_layers = config.SIAMESE_NET_BEST_NB_FCN
+        hidden_layer = config.SIAMESE_NET_BEST_HIDDEN_FCN
+        
+        print('\nSubnet parameters:', '   HL: ',config.FCN_BEST_HIDDEN, '  KL: ', config.FCN_BEST_NB)
+        print('\nSiamese parameters:', '   HL: ',hidden_layer, '  KL: ', nb_hidden_layers,
+              '  alpha: ',alpha)
         
         subnet1 = FCN(nb_hidden_layers = config.FCN_BEST_NB, hidden_layer = config.FCN_BEST_HIDDEN)
         subnet2 = FCN(nb_hidden_layers = config.FCN_BEST_NB, hidden_layer = config.FCN_BEST_HIDDEN)
     else :
         alpha = config.BEST_ALPHA_CNN
-        nb_hidden_layers = config.SIAMESE_BEST_NB_FCN
-        hidden_layer = config.SIAMESE_BEST_HIDDEN_FCN
+        nb_hidden_layers = config.SIAMESE_NET_BEST_NB_CNN
+        hidden_layer = config.SIAMESE_NET_BEST_HIDDEN_CNN
         
-        subnet1 = CNN(nb_hidden_layers = config.CNN_BEST_NB, hidden_layer = config.CNN_BEST_HIDDEN
-                  base_channel_size = config.CNN_BEST_CHANNEL, kernel_size = config.CNN_BEST_KERNEL)
-        subnet2 = CNN(nb_hidden_layers = config.CNN_BEST_NB, hidden_layer = config.CNN_BEST_HIDDEN
-                  base_channel_size = config.CNN_BEST_CHANNEL, kernel_size = config.CNN_BEST_KERNEL)
+        print('\nSubnet parameters:','   BC: ', config.CNN_BEST_CHANNEL,'   KC: ',config.CNN_BEST_KERNEL_SIZE,
+              '   HL: ',config.CNN_BEST_HIDDEN, '  KL: ', config.CNN_BEST_NB)
+        print('\nSiamese parameters:', '   HL: ',hidden_layer, '  KL: ', nb_hidden_layers,
+              '  alpha: ' ,alpha)
+        
+        subnet1 = CNN(nb_hidden_layers = config.CNN_BEST_NB, hidden_layer = config.CNN_BEST_HIDDEN,
+                  base_channel_size = config.CNN_BEST_CHANNEL, kernel_size = config.CNN_BEST_KERNEL_SIZE)
+        subnet2 = CNN(nb_hidden_layers = config.CNN_BEST_NB, hidden_layer = config.CNN_BEST_HIDDEN,
+                  base_channel_size = config.CNN_BEST_CHANNEL, kernel_size = config.CNN_BEST_KERNEL_SIZE)
 
     if weight_sharing:
-        model = SiameseNet(subnet1, nb_hidden_layer = nb_hidden_layers, hidden_layer = hidden_layer)
+        model = SiameseNet(subnet1, nb_hidden_layers = nb_hidden_layers, hidden_layer = hidden_layer)
     else:
         model = SiameseNet(subnet1, subnet2, nb_hidden_layers = nb_hidden_layers, hidden_layer = hidden_layer)
 
     print('\nTrain beginning...')
     training_losses, training_acc, _, _, test_losses, test_acc, _, _ = train_siamese(
-                model = model, dataloader = train_dataloader, test_dataloader = test_dataloader, aux_loss = aux_loss
+                model = model, dataloader = train_dataloader, test_dataloader = test_dataloader, aux_loss = aux_loss,
                 alpha = alpha)
     
     print('\nTrain complete !')
     
-    final_train_loss, final_train_loss_acc = train_losses[-1], train_acc[-1]
+    final_train_loss, final_train_loss_acc = training_losses[-1], training_acc[-1]
     print("In epoch {0}, on the train set we obtain a loss of {1} and an accuracy of {2}".format(config.EPOCHS, 
                                                                                                 round(final_train_loss, 2),
                                                                                                 round(final_train_loss_acc, 2)))
@@ -70,9 +80,10 @@ configuration = [
 configuration
     
 for weight_sharing, aux_loss in configuration :
-    
     compute_results('FCN', weight_sharing, aux_loss)
-    compute_results('CNN', weight_sharing, aux_loss)
+
+for weight_sharing, aux_loss in configuration :
+        compute_results('CNN', weight_sharing, aux_loss)
     
 print("=" * 100)
         

@@ -1,3 +1,5 @@
+from module import Module
+
 class Sigmoid(Module):
     
     def __init__(self):

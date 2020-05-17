@@ -1,8 +1,10 @@
-class Tanh(module):
+from module import Module 
+
+class Tanh(Module):
     
     def __init__(self):
         
-        super(Tanh, self).__int__()
+        super(Tanh, self).__init__()
         x = 0
         
     def forward(self, x):

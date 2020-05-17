@@ -1,3 +1,5 @@
+from module import Module 
+
 class Sequential(Module):
     
     def __init__(self, *modules):

@@ -9,8 +9,11 @@ from models.SiameseNet import SiameseNet
 
 from train import train_siamese
 import torch.utils.data as data
+import torch 
+import numpy as np 
 
-def compute_results(subnet_type, weight_sharing, aux_loss):
+def compute_results(subnet_type, weight_sharing, aux_loss, rounds = 1 ):
+    
     print("=" * 100)
     print('\nWeight sharing:', weight_sharing, '   Aux loss:', aux_loss,'       Subnet:', subnet_type)
     
@@ -44,25 +47,43 @@ def compute_results(subnet_type, weight_sharing, aux_loss):
         model = SiameseNet(subnet1, nb_hidden_layers = nb_hidden_layers, hidden_layer = hidden_layer)
     else:
         model = SiameseNet(subnet1, subnet2, nb_hidden_layers = nb_hidden_layers, hidden_layer = hidden_layer)
+    
+    results_test = []
+    results_train = []
+    
+    for i in range(rounds):
+        print('\nTrain beginning...')
+        training_losses, training_acc, _, _, test_losses, test_acc, _, _ = train_siamese(
+                    model = model, dataloader = train_dataloader, test_dataloader = test_dataloader, aux_loss = aux_loss,
+                    alpha = alpha)
 
-    print('\nTrain beginning...')
-    training_losses, training_acc, _, _, test_losses, test_acc, _, _ = train_siamese(
-                model = model, dataloader = train_dataloader, test_dataloader = test_dataloader, aux_loss = aux_loss,
-                alpha = alpha)
-    
-    print('\nTrain complete !')
-    
-    final_train_loss, final_train_loss_acc = training_losses[-1], training_acc[-1]
+        print('\nTrain complete !')
+
+        final_train_loss, final_train_loss_acc = training_losses[-1], training_acc[-1]
+        results_train.append([final_train_loss, final_train_loss_acc])
+        
+        final_test_loss, final_test_loss_acc = test_losses[-1], test_acc[-1]
+        results_test.append([final_test_loss, final_test_loss_acc])
+        
+    mean_train_results = np.array(results_train).mean(axis=0)
     print("In epoch {0}, on the train set we obtain a loss of {1} and an accuracy of {2}".format(config.EPOCHS, 
-                                                                                                round(final_train_loss, 2),
-                                                                                                round(final_train_loss_acc, 2)))
-    
-    final_test_loss, final_test_loss_acc = test_losses[-1], test_acc[-1]
+                                                                                                    round(mean_train_results[0], 3),
+                                                                                                    round(mean_train_results[1], 3)))
+
+    mean_test_results = np.array(results_test).mean(axis=0)
     print("In epoch {0}, on the test set we obtain a loss of {1} and an accuracy of {2}".format(config.EPOCHS, 
-                                                                                                round(final_test_loss, 2),
-                                                                                                round(final_test_loss_acc, 2)))
+                                                                                                    round(mean_test_results[0], 3),
+                                                                                                    round(mean_test_results[1], 3)))
     
 ###############################################################################################################################
+
+#For reproducibility
+torch.manual_seed(1)
+np.random.seed(1)
+
+print("Training 8 different architectures with optimal parameters :")
+print("By default 1 round can be modified")
+
 pairs = generate_pair_sets(config.NB_SAMPLES)
 
 train_dataset = PairDataset(pairs[0], pairs[1], pairs[2])

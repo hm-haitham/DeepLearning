@@ -20,12 +20,12 @@ class Linear(Module):
         
         # Initialize weights with Xavier initalization or with loaded weights
         if w is None:
-            self.w = Xavier_init(self.dim_out, self.dim_in).initialize()
+            self.w = Xavier_init(self.dim_in,self.dim_out).initialize()
         else:
             self.w = w
             
         if b is None:
-            self.b = Xavier_init(1, self.dim_out).initialize()
+            self.b = Xavier_init(self.dim_out, 1).initialize()
         else:
             self.b = b
             
@@ -48,18 +48,17 @@ class Linear(Module):
         """ 
         Computes  a backward pass and update gradient of the layer's parameters
         Input : 
-            dl_ds : gradient with repect to the activation
+            dl_ds : gradient with repect to the activation (batchsize, dim_out)
         Output:
-            dl_dx : gradient with repect to the input
+            dl_dx : gradient with repect to the input (batchsize, dim_in)
         """
+        ds_dx = self.w            # (dim_out, dim_in)
+        dl_dx = dl_ds.mm(ds_dx)   # (batchsize, dim_out) * (dim_out, dim_in) = (batchsize,dim_in)
         
-        ds_dx = self.w.t()
-        dl_dx = ds_dx.mm(dl_ds)
-        
-        self.dl_db = grad_wrt_output
-        self.dl_dw = self.x.mm(dl_ds)
+        self.dl_db = dl_ds.sum(0)          #(dim_out, 1)
+        self.dl_dw = dl_ds.t().mm(self.x)  #(batchsize, dim_out).T *  (batchsize,dim_in)  = (dim_out , dim_in)
   
-        return dl_dx
+        return dl_dx   #(batchsize, dim_in)
         
     def param(self):
         return [[self.w , self.dl_dw],[self.b, self.dl_db]]

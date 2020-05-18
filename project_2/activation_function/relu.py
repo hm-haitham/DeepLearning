@@ -11,15 +11,9 @@ class ReLU(Module):
     def forward(self,x):
 
         self.x = x
-        if (x>0):
-            return x
-        else:
-            return 0
-
+        y = x * (x > 0).float()
+        return y
 
     def backward(self, dl_ds):
-
-        if (self.x>0):
-            return dl_ds
-        else:
-            return 0
+        
+        return 2* (dl_ds.sign() + 1 )

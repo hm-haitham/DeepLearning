@@ -1,4 +1,4 @@
-from optimizer import Optimizer
+from optimizer.optimizer import Optimizer
 
 class SGD(Optimizer):
 
@@ -14,9 +14,9 @@ class SGD(Optimizer):
         for m in self.model.modules :  
             for i, _ in enumerate(m.param()): #[weight and bias] or []
                 if(i == 0):
-                    m.w = m.w - lr * m.dl_dw
+                    m.w = m.w - self.lr * m.dl_dw
                 elif(i == 1): 
-                    m.b = m.b - lr * m.dl_db
+                    m.b = m.b - self.lr * m.dl_db
                 else:
                     raise Exception('Parameters unknown')
                 

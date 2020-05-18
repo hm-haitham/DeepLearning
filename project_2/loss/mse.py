@@ -4,20 +4,26 @@ class MSELoss(Module):
     
     def __init__(self,model):
         
-        super(MSELoss, self).__init()
+        super(MSELoss, self).__init__()
         self.prediction = None
         self.target = None
-        self.model=model
+        self.model = model
         
     def forward(self, prediction, target):
-        
+        '''
+        Forward pass 
+            prediction: (batchsize, dim)
+            target: (1, dim)
+            return: MSE (1)
+        '''
         self.prediction = prediction
         self.target = target
-        batched_error = (prediction - target).pow(2).sum(1)
-        return batched_error.mean(0)
+        batched_error = (prediction - target).pow(2).sum(1) #L2 norm
+        return batched_error.mean(0)  #take the mean over the batch
     
-     def backward(self):
+    def backward(self):
         
         batchsize = self.prediction.shape[0]
-        dloss = 2*(self.prediction-self.target)/batchsize
+        dloss = 2*(self.prediction - self.target)/batchsize
+        #proagate the loss to the model
         self.model.backward(dloss)

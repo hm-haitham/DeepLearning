@@ -9,7 +9,7 @@ import torch
 
 class Linear(Module):
     
-    def __init__(self, dim_in, dim_out,w=None,b=None):
+    def __init__(self, dim_in, dim_out, w=None,b=None):
         
         super(Linear, self).__init__()
         self.dim_in = dim_in
@@ -61,7 +61,7 @@ class Linear(Module):
         return dl_dx   #(batchsize, dim_in)
         
     def param(self):
-        return [[self.w , self.dl_dw],[self.b, self.dl_db]]
+        return [[self.w , self.dl_dw], [self.b, self.dl_db]]
 
      
     def reset_gradient(self):

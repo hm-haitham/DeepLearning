@@ -25,5 +25,6 @@ class MSELoss(Module):
         
         batchsize = self.prediction.shape[0]
         dloss = 2*(self.prediction - self.target)/batchsize
+        
         #proagate the loss to the model
         self.model.backward(dloss)

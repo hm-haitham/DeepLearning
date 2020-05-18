@@ -14,7 +14,7 @@ class CrossEntropyLoss(Module):
         x_shift = torch.max(x,1,keepdim=True)[0]
         
         x_exp = torch.exp(x-x_shift)
-        x_exp_sum = torch.sum(x_exp, dim, keepdim=True)
+        x_exp_sum = torch.sum(x_exp, dim, keepdim=True)   #dim 1 or 0 ? 
         
         return x_exp/x_exp_sum
         

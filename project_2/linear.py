@@ -25,7 +25,7 @@ class Linear(Module):
             self.w = w
             
         if b is None:
-            self.b = Xavier_init(self.dim_out, 1).initialize()
+            self.b = Xavier_init(1, self.dim_out).initialize()
         else:
             self.b = b
             
@@ -34,19 +34,19 @@ class Linear(Module):
         self.dl_db = torch.empty(self.b.size())
     
     def forward(self, x):
-        """ Computes  a forward pass 
+        """ 
+        Computes  a forward pass 
         Input : 
-            x : (dim_in,N), with N the number of samples (the batch size)
+            x : (N, dim_in), with N the number of samples (the batch size)
         Output:
-            y : y=Wx+b with W:(dim_out, dim_in), b:(dim_out, N) giving y:(dim_out, N)
+            y : y=xW'+ b with W:(dim_out, dim_in), b:(N, dim_out) giving y:(N, dim_out)
         """
         self.x = x
-        return self.w.mm(self.x) + self.b
+        return self.x.mm(self.w.t()) + self.b
 
     def backward(self, dl_ds):
-        
         """ 
-       Computes  a backward pass and update gradient of the layer's parameters
+        Computes  a backward pass and update gradient of the layer's parameters
         Input : 
             dl_ds : gradient with repect to the activation
         Output:

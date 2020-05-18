@@ -1,6 +1,5 @@
 '''
 Fully connected layer 
-
 Parameters : dim_in and dim_out. 
 Weights initialization : xavier_normal initilaization and the bias normally initialized.
 '''
@@ -10,19 +9,26 @@ import torch
 
 class Linear(Module):
     
-    def __init__(self, dim_in, dim_out):
+    def __init__(self, dim_in, dim_out,w=None,b=None):
         
         super(Linear, self).__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
         
         #input
-        self.x = 0
+        self.x = None
         
-        # Initialize weights with Xavier initalization
-        self.w = Xavier_init(self.dim_out, self.dim_in).initialize()
-        self.b = Xavier_init(self.dim_out, 1).initialize()
-
+        # Initialize weights with Xavier initalization or with loaded weights
+        if w is None:
+            self.w = Xavier_init(self.dim_out, self.dim_in).initialize()
+        else:
+            self.w = w
+            
+        if b is None:
+            self.b = Xavier_init(self.dim_out, 1).initialize()
+        else:
+            self.b = b
+            
         # Initialize gradient
         self.dl_dw = torch.empty(self.w.size())
         self.dl_db = torch.empty(self.b.size())
@@ -55,15 +61,10 @@ class Linear(Module):
   
         return dl_dx
         
-    def params(self):
-        
-        return [self.w, self.bias]
-    
-    def update(self, lr):
-        
-        self.w = self.w - lr * self.dl_dw
-        self.b = self.b - lr * self.dl_db
-        
+    def param(self):
+        return [[self.w , self.dl_dw],[self.b, self.dl_db]]
+
+     
     def reset_gradient(self):
         
         self.dl_dw.zero_()

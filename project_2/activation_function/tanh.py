@@ -5,7 +5,7 @@ class Tanh(Module):
     def __init__(self):
         
         super(Tanh, self).__init__()
-        x = 0
+        x = None
         
     def forward(self, x):
         

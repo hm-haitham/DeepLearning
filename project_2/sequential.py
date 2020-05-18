@@ -11,7 +11,7 @@ class Sequential(Module):
             self.modules.append(m)
     
     def forward(self, x):
-        
+
         for m in self.modules:
             x = m.forward(x)
         return x
@@ -26,5 +26,5 @@ class Sequential(Module):
         
         parameters = []
         for m in self.modules:
-            parameters += m.param
+            parameters += m.param()
         return parameters

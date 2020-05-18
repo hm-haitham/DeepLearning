@@ -5,7 +5,7 @@ class Sigmoid(Module):
     def __init__(self):
         
         super(Sigmoid, self).__init__()
-        self.x = 0
+        self.x = None
     
     def sigmoid(self,x):
         
@@ -22,7 +22,7 @@ class Sigmoid(Module):
         sigm = self.sigmoid(self.x)
         ds_dx = sigm * (1 - sigm)
         dl_dx = ds_dx * dl_ds
-        return ds_dx * dl_ds
+        return dl_dx
     
     def param(self) :
         return []

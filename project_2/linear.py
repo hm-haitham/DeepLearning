@@ -42,7 +42,7 @@ class Linear(Module):
             y : y=xW'+ b with W:(dim_out, dim_in), b:(N, dim_out) giving y:(N, dim_out)
         """
         self.x = x
-        return self.x.mm(self.w.t()) + self.b
+        return self.x.mm(self.w.t()) + self.b   #(batch_size, dim_out)
 
     def backward(self, dl_ds):
         """ 

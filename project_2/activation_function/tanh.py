@@ -16,7 +16,4 @@ class Tanh(Module):
         
         ds_dx = 1 - self.x.tanh().pow(2)
         dl_dx = ds_dx * dl_ds
-        return ds_dx * dl_ds
-    
-    def params(self):
-        return []
+        return dl_dx

@@ -8,22 +8,14 @@ class LeakyReLU(Module):
         self.x = None
         self.negative_slope=negative_slope
 
-
     def forward(self,x):
-
+        
         self.x = x
-        if (x>0):
-            return x
-        else:
-            return x * negative_slope
-
+        y = x * negative_slope * (x <= 0).float() +  x * (x > 0).float()
+        return y
 
     def backward(self, dl_ds):
-
-        if (self.x>0):
-            return dl_ds
-        else:
-            return dl_ds * negative_slope
-
-    def param(self) :
-        return []
+        
+        ds_dx =  negative_slope * (x <= 0).float() +  (x > 0).float()
+        dl_dx = ds_dx * dl_ds
+        return dl_dx

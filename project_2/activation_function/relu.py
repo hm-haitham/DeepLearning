@@ -16,4 +16,6 @@ class ReLU(Module):
 
     def backward(self, dl_ds):
         
-        return 2* (self.x.sign() + 1 ) * dl_ds
+        ds_dx =  2* (self.x.sign() + 1 ) * dl_ds
+        dl_dx = ds_dx * dl_ds
+        return dl_dx

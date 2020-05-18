@@ -23,6 +23,3 @@ class Sigmoid(Module):
         ds_dx = sigm * (1 - sigm)
         dl_dx = ds_dx * dl_ds
         return dl_dx
-    
-    def param(self) :
-        return []

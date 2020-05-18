@@ -6,16 +6,16 @@ class LeakyReLU(Module):
 
         super(LeakyReLU, self).__init__()
         self.x = None
-        self.negative_slope=negative_slope
+        self.negative_slope = negative_slope
 
     def forward(self,x):
         
         self.x = x
-        y = x * negative_slope * (x <= 0).float() +  x * (x > 0).float()
+        y = x * self.negative_slope * (x <= 0).float() +  x * (x > 0).float()
         return y
 
     def backward(self, dl_ds):
         
-        ds_dx =  negative_slope * (x <= 0).float() +  (x > 0).float()
+        ds_dx =  self.negative_slope * (self.x <= 0).float() +  (self.x > 0).float()
         dl_dx = ds_dx * dl_ds
         return dl_dx

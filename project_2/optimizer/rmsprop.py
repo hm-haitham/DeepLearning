@@ -1,18 +1,39 @@
-class RMSPropOptimizer(object):
-    def __init__(self, model, lr = 0.001, gamma = 0.9, eps=1e-8):
+from optimizer.optimizer import Optimizer
+import torch 
+
+class RMSPropOptimizer(Optimizer):
+    def __init__(self, model, lr = 0.001, gamma = 0.9, epsilon=1e-8):
         
         self.model = model
-  
+        
         self.lr = lr
-    
-        self.beta = beta
-        self.r = None
-        self.eps = eps
+        self.gamma = gamma
+        self.epsilon = epsilon
+        
+        self.prev_grad = [torch.zeros(p[0].shape) for p in self.model.param()]
+
 
     def step(self):
-        if self.r is None:
-            self.r = [torch.zeros(param[0].shape) for param in self.params]
-
-        for i, param in enumerate(self.params):
-            self.r[i] = self.beta*self.r[i]  + (1 - self.beta) * param[1] * param[1]
-            param[0] -= self.eta * param[1]/(torch.sqrt(self.r[i]) + self.eps)
+        
+        index = 0
+        for m in self.model.modules : 
+            if m.param():  #True if param not empty     
+                for i, p in enumerate(m.param()): #[weight and bias] 
+                    
+                    #v_t = gamma * v_t-1 + (1 - gamma) * grad_t**2
+                    self.prev_grad[index] = self.gamma * self.prev_grad[index] + (1 - self.gamma) * p[1]**2
+                    
+                    #weights
+                    if(i == 0):            
+                        m.w = m.w - self.lr / (self.prev_grad[index]+ self.epsilon).sqrt() * p[1]
+                        index += 1
+                    
+                    #bias    
+                    elif(i == 1):                         
+                        m.b = m.b - self.lr / (self.prev_grad[index] + self.epsilon).sqrt() * p[1]
+                        index += 1
+                        
+                    else:
+                        raise Exception('Parameters unknown')
+            
+            

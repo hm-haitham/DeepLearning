@@ -1,10 +1,10 @@
 from module import Module
 
-class MSELoss(Module):
+class LossMSE(Module):
     
     def __init__(self,model):
         
-        super(MSELoss, self).__init__()
+        super(LossMSE, self).__init__()
         self.prediction = None
         self.target = None
         self.model = model

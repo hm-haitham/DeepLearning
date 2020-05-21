@@ -17,17 +17,16 @@ class MomentumSGDOptimizer(Optimizer):
             if m.param():  #True if param not empty     
                 for i, p in enumerate(m.param()): #[weight and bias] 
                     
+                    #v_t = momentum * v_t-1 + lr * grad_t
+                    self.prev_grad[index] = self.momentum * self.prev_grad[index] + self.lr * p[1]
+
                     #weights
                     if(i == 0):
-                        #v_t = momentum * v_t-1 + (1 - momentum) * grad_t
-                        self.prev_grad[index] = self.momentum * self.prev_grad[index] + self.lr * p[1]
                         m.w = m.w - self.prev_grad[index]
                         index += 1
                     
                     #bias    
                     elif(i == 1): 
-                        #v_t = momentum * v_t-1 + (1 - momentum) * grad_t
-                        self.prev_grad[index] = self.momentum * self.prev_grad[index] + self.lr * p[1]
                         m.b = m.b - self.prev_grad[index]
                         index += 1
                         

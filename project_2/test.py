@@ -116,14 +116,14 @@ result_rounds = []  #training_losses, training_acc, test_losses, test_acc
 time1 = time.perf_counter()
 for i in range(rounds):     
         
-    print("Training round {0} : ".format(i))
+    print("Training round {0} : ".format(i+1))
     model = Sequential(
             Linear(input_units, hidden_units),
-            LeakyReLU(),
+            ReLU(),
             Linear(hidden_units, hidden_units),
-            LeakyReLU(),
+            ReLU(),
             Linear(hidden_units, hidden_units),
-            LeakyReLU(),
+            ReLU(),
             Linear(hidden_units, output_units),
             Sigmoid()
             )

@@ -17,7 +17,7 @@ class Xavier_init(Initializer):
             a =  math.sqrt(6. / (self.fan_in + self.fan_out) )    
             w = torch.empty(self.fan_out, self.fan_in).uniform_(-a,a)
 
-        #normal
+        #using normal distribution
         else: 
             std = math.sqrt(2. / (self.fan_in + self.fan_out) )
             w = tensor.normal_(0,std)

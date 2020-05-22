@@ -13,7 +13,8 @@ class FCN(nn.Module):
             raise Exception("Minimum 1 hidden layers for the FCN")
         
         self.hiddens = nn.ModuleList([nn.Sequential(nn.Linear(hidden_layer, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)) for i in range(nb_hidden_layers-1)])
-
+        
+        #we always have at least this layer
         self.hiddens.insert(0,nn.Sequential(nn.Linear(config.SINGLE_IMAGE_SIZE, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)))
         
         self.output = nn.Linear(hidden_layer, config.NUMBER_OF_CLASSES)
@@ -28,4 +29,5 @@ class FCN(nn.Module):
         
         out = self.output(hid)
         
-        return F.softmax(out, dim=1), out
+        #we give the option to apply a softmax activation to the output
+        return F.softmax(out, dim=1), out   

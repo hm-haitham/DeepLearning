@@ -8,6 +8,7 @@ class MomentumSGDOptimizer(Optimizer):
         self.model = model
         self.lr = lr
         self.momentum = momentum
+        #first moment estimator 
         self.prev_grad = [torch.zeros(p[0].shape) for p in self.model.param()]
         
     def step(self):
@@ -17,6 +18,7 @@ class MomentumSGDOptimizer(Optimizer):
             if m.param():  #True if param not empty     
                 for i, p in enumerate(m.param()): #[weight and bias] 
                     
+                    #compute estimator
                     #v_t = momentum * v_t-1 + lr * grad_t
                     self.prev_grad[index] = self.momentum * self.prev_grad[index] + self.lr * p[1]
 

@@ -18,13 +18,19 @@ class LossMSE(Module):
         '''
         self.prediction = prediction
         self.target = target
-        batched_error = (prediction - target).pow(2).sum(1) #L2 norm
+        batched_error = (prediction - target).pow(2).sum(1) #L2 norm of the difference between prediction and target
         return batched_error.mean(0)  #take the mean over the batch
     
     def backward(self):
         
+        if(self.prediction == None):
+            raise Exception("Run backward twice !")
+            
         batchsize = self.prediction.shape[0]
         dloss = 2*(self.prediction - self.target)/batchsize
+        
+        #reinitiliaze the predictions
+        self.prediction = None
         
         #proagate the loss to the model
         self.model.backward(dloss)

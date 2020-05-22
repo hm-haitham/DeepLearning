@@ -12,10 +12,10 @@ class BasicNet(nn.Module):
         if nb_hidden_layers < 1:
             raise Exception("Minimum 1 hidden layers for basic net" )
         
-        #nb_hidden_layers-1 times Linear layers (hidden_layer,hidden_layer)
+        #list of nb_hidden_layers-1 Linear layers (hidden_layer,hidden_layer)
         self.hiddens = nn.ModuleList([nn.Sequential(nn.Linear(hidden_layer, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)) for i in range(nb_hidden_layers-1)])
         
-        #Linear layer (2*14*14,hidden_layer)
+        #Linear layer (2*14*14, hidden_layer)
         self.hiddens.insert(0, nn.Linear(config.DOUBLE_IMAGE_SIZE, hidden_layer))
         
         self.output = nn.Linear(hidden_layer, 1)

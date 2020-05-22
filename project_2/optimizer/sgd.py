@@ -12,7 +12,7 @@ class SGD(Optimizer):
     def step(self):
     
         for m in self.model.modules :  
-            for i, _ in enumerate(m.param()): #[weight and bias] or []
+            for i, _ in enumerate(m.param()): #[weight and bias] for linear module or [] for other modules
                 if(i == 0):
                     m.w = m.w - self.lr * m.dl_dw
                 elif(i == 1): 

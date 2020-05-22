@@ -24,7 +24,8 @@ class SiameseNet(nn.Module):
             self.subnets.append(right_net)
         
         self.hiddens = nn.ModuleList([nn.Sequential(nn.Linear(hidden_layer, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)) for i in range(nb_hidden_layers-1)])
-
+        
+        #we always have at least this layer
         self.hiddens.insert(0,nn.Sequential(nn.Linear(config.NUMBER_OF_CLASSES*2, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)))
 
         self.output = nn.Linear(hidden_layer, 1)
@@ -32,7 +33,7 @@ class SiameseNet(nn.Module):
         
     def forward(self, x):
         
-        #SPLIT x which is of size [N, 2, 14, 14] to two distinct tensors of size [N, 1, 14, 14]
+        #Split x which is of size [N, 2, 14, 14] to two distinct tensors of size [N, 1, 14, 14]
         input1 = x[:,0:1,:,:]   #(batch_size,1,14,14)
         input2 = x[:,1:2,:,:]   #(batch_size,1,14,14)
         
@@ -43,7 +44,8 @@ class SiameseNet(nn.Module):
         else :
             righted, righted_no = self.subnets[1](input2)
         
-        #CONCAT lefted and righted which are of size [N,10] each to a single tensor of size [N,20]
+        #Concat lefted and righted subnets which are of size [N,10] each to a single tensor of size [N,20]
+        #We let the user choose if he wants or not to apply softmax activation to the subnet's output
         if(self.soft):
             hid = torch.cat((lefted, righted),1)
         else:

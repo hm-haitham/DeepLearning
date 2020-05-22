@@ -32,7 +32,8 @@ class CNN(nn.Module):
         
         
         self.fc_net = nn.ModuleList([nn.Sequential(nn.Linear(hidden_layer, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)) for i in range(nb_hidden_layers-1)])
-
+        
+        #we always have at least this layer
         self.fc_net.insert(0,nn.Sequential(nn.Linear(fcn_input_size, hidden_layer), nn.LeakyReLU(), nn.Dropout(p=0.2)))
 
         self.output = nn.Linear(hidden_layer, config.NUMBER_OF_CLASSES)

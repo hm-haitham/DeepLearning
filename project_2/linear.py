@@ -1,12 +1,11 @@
+from xavier_init import Xavier_init
+from module import Module
+import torch
 '''
 Fully connected layer 
 Parameters : dim_in and dim_out. 
 Weights initialization : xavier_normal initilaization and the bias normally initialized.
 '''
-from xavier_init import Xavier_init
-from module import Module
-import torch
-
 class Linear(Module):
     
     def __init__(self, dim_in, dim_out, w=None,b=None):

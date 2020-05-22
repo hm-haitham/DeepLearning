@@ -8,13 +8,14 @@ from config import DATA_DIR
 from config import NB_SAMPLES
 
 ######################################################################
-# The data
 
 def convert_to_one_hot_labels(input, target):
     tmp = input.new_zeros(target.size(0), target.max() + 1)
     #set ones
     tmp.scatter_(1, target.view(-1, 1), 1.0)
     return tmp
+
+######################################################################
 
 def load_data(cifar = None, one_hot_labels = False, normalize = False, flatten = True):
 
@@ -95,26 +96,3 @@ def generate_pair_sets(nb):
            mnist_to_pairs(nb, test_input, test_target)
 
 ######################################################################
-
-def compute_accuracy(tensor1, tensor2):
-    
-    tensor_accuracy = torch.where(tensor1 == tensor2, torch.tensor(1), torch.tensor(0))
-    
-    accuracy = torch.sum(tensor_accuracy).item() / NB_SAMPLES
-    
-    return accuracy
-
-######################################################################
-
-def save_model(model, epoch=None, loss=None, save_dir=None, specific_name=None):
-
-    if epoch and loss and save_dir and specific_name:
-        model_name = model.model_name
-        timestr = time.strftime("%Y%m%d-%H%M%S")
-        file_name = f"{timestr}_{model_name}_epoch_{epoch}_loss_{loss:03.3f}.pt"
-        Path(save_dir).mkdir(exist_ok=True)
-        file_path = Path(save_dir) / file_name
-        torch.save(model.state_dict(), str(file_path))
-    elif save_dir and specific_name:
-        file_path = Path(save_dir) / specific_name
-        torch.save(model.state_dict(), str(file_path))

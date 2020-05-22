@@ -9,7 +9,7 @@ class RMSPropOptimizer(Optimizer):
         self.lr = lr
         self.gamma = gamma
         self.epsilon = epsilon
-        
+        #second moment estimator for each parameter
         self.prev_grad = [torch.zeros(p[0].shape) for p in self.model.param()]
 
 
@@ -20,6 +20,7 @@ class RMSPropOptimizer(Optimizer):
             if m.param():  #True if param not empty     
                 for i, p in enumerate(m.param()): #[weight and bias] 
                     
+                    #compute estimator 
                     #v_t = gamma * v_t-1 + (1 - gamma) * grad_t**2
                     self.prev_grad[index] = self.gamma * self.prev_grad[index] + (1 - self.gamma) * p[1]**2
                     
